@@ -2,8 +2,7 @@ service_name="graphql"
 service_location="/Users/heikki.pesonen/Documents"
 path="$service_location/voikukka/services/backend/$service_name/__development"
 target_config_file="$service_location/herkku-web-store/.env.local"
-
-# default_api_url=https://api.test.s-kaupat.dev/
+mobile_config_file="$service_location/skauppamobile/env/index.js"
 
 # Check if reset parameter is provided
 if [ "$1" == "reset" ]; then
@@ -14,6 +13,12 @@ if [ "$1" == "reset" ]; then
   else
     echo "NEXT_PUBLIC_TEST_API_URL not found or already commented out"
   fi
+  
+  echo "Resetting mobile API URL to https://api.test.s-kaupat.dev"
+  if grep -q '"S_KAUPAT_API_URL":' "$mobile_config_file"; then
+    sed -i '' 's|"S_KAUPAT_API_URL": ".*"|"S_KAUPAT_API_URL": "https://api.test.s-kaupat.dev"|' "$mobile_config_file"
+    echo "Reset $mobile_config_file to default test URL"
+  fi
   exit 0
 fi
 
@@ -21,7 +26,6 @@ env_file=$(ls $path/dev*.json | egrep -o dev[0-9]+)
 env_url="https://api-$env_file.dev.s-kaupat.dev"
 
 next_public_api_test_url="NEXT_PUBLIC_TEST_API_URL=$env_url"
-
 
 # clear the terminal
 clear
@@ -41,3 +45,12 @@ else
   echo "$next_public_api_test_url" >> "$target_config_file"
 fi
 echo "Updated $target_config_file with $env_url"
+
+echo "-------------------------"
+echo "Updating $mobile_config_file with $env_url"
+if grep -q '"S_KAUPAT_API_URL":' "$mobile_config_file"; then
+  sed -i '' "s|\"S_KAUPAT_API_URL\": \".*\"|\"S_KAUPAT_API_URL\": \"$env_url\"|" "$mobile_config_file"
+  echo "Updated $mobile_config_file with $env_url"
+else
+  echo "S_KAUPAT_API_URL not found in $mobile_config_file"
+fi
